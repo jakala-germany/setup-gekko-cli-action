@@ -1,0 +1,49 @@
+name: 'CI'
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: 'Test'
+    runs-on: [ ubuntu-latest ]
+    timeout-minutes: 10
+    permissions:
+      contents: read # read for checkout
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 'Run tests (the action has no dependencies, the preinstalled node is enough)'
+        run: node --test test/*.test.js
+        shell: bash
+
+  lint:
+    name: 'Check workflows'
+    runs-on: [ ubuntu-latest ]
+    timeout-minutes: 10
+    permissions:
+      contents: read # read for checkout
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 'Install actionlint'
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+        shell: bash
+
+      - name: 'Check the workflows'
+        run: '"$(go env GOPATH)/bin/actionlint"'
+        shell: bash

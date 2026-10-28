@@ -1,0 +1,13 @@
+{
+  "name": "setup-gekko-cli-action",
+  "version": "0.0.0",
+  "private": true,
+  "description": "GitHub Action that installs the gekko CLI and removes it again after the job",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

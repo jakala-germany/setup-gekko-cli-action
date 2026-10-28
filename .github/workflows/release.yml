@@ -1,0 +1,86 @@
+name: 'Release'
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version of a dry run: everything is checked, nothing is published'
+        required: true
+        default: '0.0.0-dryrun'
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+
+jobs:
+  checks:
+    name: 'Checks'
+    uses: ./.github/workflows/ci.yml
+
+  guard:
+    name: 'Guard'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # read for checkout
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'The tag is a version on main and has a changelog section'
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            git fetch origin main
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::$VERSION is not on main; release only from main" >&2
+              exit 1
+            fi
+          fi
+        shell: bash
+
+      - name: 'Take the release notes from the changelog'
+        run: |
+          # A dry run uses the newest released version, a release needs its own section
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            notes_version="$VERSION"
+          else
+            notes_version="$(sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -n 1)"
+          fi
+          ./scripts/release-notes.sh "$notes_version"
+        shell: bash
+
+  publish:
+    name: 'Publish'
+    if: ${{ github.event_name == 'push' }}
+    needs: [ checks, guard ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the GitHub release
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 'Take the release notes from the changelog'
+        run: ./scripts/release-notes.sh "$VERSION" > RELEASE_NOTES.md
+        shell: bash
+
+      # The release is immutable once it is published: the tag can neither move nor be deleted
+      - name: 'Publish the GitHub release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file RELEASE_NOTES.md --latest
+        shell: bash

@@ -1,0 +1,52 @@
+name: 'Setup gekko CLI'
+description: 'Installs the gekko CLI and its system runner from a GitHub release, verifies their SHA-256 and removes everything again when the job is done'
+author: 'Jakala Germany'
+
+branding:
+  icon: 'download'
+  color: 'blue'
+
+inputs:
+  version:
+    description: 'gekko release to install, with or without a leading v (1.0.0 or v1.0.0), or latest'
+    required: false
+    default: 'latest'
+  token:
+    description: 'Token that reads the releases of the gekko repository; the default token is enough while that repository is public, a private one needs a token that can read it'
+    required: false
+    default: ${{ github.token }}
+  repository:
+    description: 'Repository that publishes the gekko releases'
+    required: false
+    default: 'jakala-germany/gekko'
+  ios:
+    description: 'Also install the iOS simulator agent and system runner (macOS only)'
+    required: false
+    default: 'false'
+  cli-sha256:
+    description: 'Optional hard pin: SHA-256 of the gekko binary (gekko-macos-arm64 or gekko-linux-x64); replaces the digest GitHub reports for the release asset, the step fails on a mismatch'
+    required: false
+    default: ''
+  system-runner-sha256:
+    description: 'Optional hard pin: SHA-256 of gekko-system-runner.apk'
+    required: false
+    default: ''
+  ios-runner-sha256:
+    description: 'Optional hard pin: SHA-256 of gekko-ios-runner.zip (used when ios is true)'
+    required: false
+    default: ''
+  ios-agent-sha256:
+    description: 'Optional hard pin: SHA-256 of gekko-ios-agent.zip (used when ios is true)'
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: 'The installed gekko release, without a leading v'
+  path:
+    description: 'Absolute path of the installed gekko binary'
+
+runs:
+  using: 'node24'
+  main: 'src/main.js'
+  post: 'src/post.js'
