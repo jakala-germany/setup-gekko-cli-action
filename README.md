@@ -9,9 +9,9 @@ It is a JavaScript action without dependencies and without a build step (`src/` 
 ```yaml
 steps:
   - name: 'Setup gekko'
-    uses: jakala-germany/setup-gekko-cli-action@1.0.0
+    uses: jakala-germany/setup-gekko-cli-action@1.1.0
     with:
-      version: 1.0.0
+      version: 1.1.0
 
   - name: 'Run tests'
     run: gekko run --tags smoke
@@ -60,7 +60,7 @@ That catches a corrupted or truncated download, but not an asset that someone re
 
 ```yaml
 with:
-  version: 1.0.0
+  version: 1.1.0
   cli-sha256: <sha256 of gekko-macos-arm64 or gekko-linux-x64>
   system-runner-sha256: <sha256 of gekko-system-runner.apk>
 ```
