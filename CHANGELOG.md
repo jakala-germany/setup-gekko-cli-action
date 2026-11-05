@@ -2,7 +2,7 @@
 
 ## [Snapshot]
 
-[Snapshot]: https://github.com/jakala-germany/setup-gekko-cli-action/compare/1.2.0...HEAD
+[Snapshot]: https://github.com/jakala-germany/setup-gekko-cli-action/compare/1.3.0...HEAD
 
 **New**
 
@@ -11,6 +11,14 @@
 **Changed**
 
 - Upcoming changes go here
+
+## [1.3.0]
+
+[1.3.0]: https://github.com/jakala-germany/setup-gekko-cli-action/compare/1.2.0...1.3.0
+
+**Changed**
+
+- Released together with gekko 1.3.0; no functional change
 
 ## [1.2.0]
 
