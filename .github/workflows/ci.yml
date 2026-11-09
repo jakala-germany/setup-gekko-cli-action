@@ -13,9 +13,13 @@ concurrency:
 
 jobs:
   test:
-    name: 'Test'
-    runs-on: [ ubuntu-latest ]
+    name: 'Test (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     permissions:
       contents: read # read for checkout
     steps:
@@ -26,6 +30,50 @@ jobs:
 
       - name: 'Run tests (the action has no dependencies, the preinstalled node is enough)'
         run: node --test test/*.test.js
+        shell: bash
+
+  # The action itself on every kind of runner, against a real gekko release: the download, the PATH and the variables
+  smoke:
+    name: 'Install gekko (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            version: '1.3.0'
+          - os: macos-latest
+            version: '1.3.0'
+          # Put the first gekko release with gekko-windows-x64.exe here; as long as there is none, this leg is skipped
+          - os: windows-latest
+            version: ''
+    permissions:
+      contents: read # read for checkout
+    steps:
+      - name: 'Checkout'
+        if: ${{ matrix.version != '' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 'Install gekko with this version of the action'
+        if: ${{ matrix.version != '' }}
+        id: gekko
+        uses: ./
+        with:
+          version: ${{ matrix.version }}
+
+      - name: 'The installed gekko runs and the runner is exported'
+        if: ${{ matrix.version != '' }}
+        env:
+          INSTALLED_VERSION: ${{ steps.gekko.outputs.version }}
+          INSTALLED_PATH: ${{ steps.gekko.outputs.path }}
+        run: |
+          test "$INSTALLED_VERSION" = "${{ matrix.version }}"
+          test -f "$INSTALLED_PATH"
+          gekko --version | grep -F "$INSTALLED_VERSION"
+          test -f "$GEKKO_RUNNER_APK"
         shell: bash
 
   lint:
