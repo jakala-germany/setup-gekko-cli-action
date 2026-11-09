@@ -21,7 +21,7 @@ test('post removes the install directory with everything in it', (t) => {
   const dir = installedDirectory(step);
   cleanup({ env: { ...step.env, STATE_dir: dir }, write: step.write });
   assert.equal(fs.existsSync(dir), false);
-  assert.match(step.logs.join(''), new RegExp(`Removed ${dir}`));
+  assert.ok(step.logs.join('').includes(`Removed ${dir}`));
 });
 
 test('post leaves the rest of RUNNER_TEMP alone', (t) => {

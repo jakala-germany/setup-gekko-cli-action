@@ -22,8 +22,11 @@ test('getBooleanInput accepts the YAML spellings and rejects anything else', () 
 });
 
 test('file commands append name=value and use a heredoc for multi-line values', () => {
-  assert.match(fileCommandEntry('A', 'one'), /^A=one\n$/);
-  assert.match(fileCommandEntry('B', 'x\ny'), /^B<<ghadelimiter_[0-9a-f-]+\nx\ny\nghadelimiter_[0-9a-f-]+\n$/);
+  assert.match(fileCommandEntry('A', 'one'), /^A=one\r?\n$/);
+  assert.match(
+    fileCommandEntry('B', 'x\ny'),
+    /^B<<ghadelimiter_[0-9a-f-]+\r?\nx\ny\r?\nghadelimiter_[0-9a-f-]+\r?\n$/,
+  );
 });
 
 test('output, env, path and state go to their files', (t) => {

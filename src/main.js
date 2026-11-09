@@ -10,6 +10,7 @@ const {
   IOS_RUNNER_ASSET,
   SYSTEM_RUNNER_ASSET,
   cliAssetName,
+  cliBinaryName,
   digestOf,
   downloadAsset,
   extractZip,
@@ -114,9 +115,11 @@ async function run({
 
   const binDir = path.join(installDir, 'bin');
   fs.mkdirSync(binDir);
-  const cliPath = path.join(binDir, 'gekko');
+  const cliPath = path.join(binDir, cliBinaryName(platform));
   fs.renameSync(staged.cli, cliPath);
-  fs.chmodSync(cliPath, 0o755);
+  if (platform !== 'win32') {
+    fs.chmodSync(cliPath, 0o755);
+  }
   const runnerApk = path.join(installDir, SYSTEM_RUNNER_ASSET);
   fs.renameSync(staged.systemRunner, runnerApk);
 

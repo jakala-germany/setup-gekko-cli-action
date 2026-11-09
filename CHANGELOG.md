@@ -6,7 +6,7 @@
 
 **New**
 
-- Upcoming additions go here
+- Windows x64 runners: the action installs `gekko-windows-x64.exe` as `gekko.exe` (needs a gekko release that has it, the first one after 1.3.0) and exports the same variables as on the other runners; its tests and a smoke job run on Linux, macOS and Windows
 
 **Changed**
 

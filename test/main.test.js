@@ -23,6 +23,9 @@ async function setup(t, { releases = [buildRelease()], inputs = {}, ...options }
 
 const linux = { platform: 'linux', arch: 'x64' };
 const mac = { platform: 'darwin', arch: 'arm64' };
+const windows = { platform: 'win32', arch: 'x64' };
+// Unzipping the iOS archives needs unzip or ditto, which a Windows machine does not have (and iOS needs macOS anyway)
+const notOnWindows = { skip: process.platform === 'win32' && 'iOS is macOS only' };
 
 function installDir(step) {
   return path.join(step.runnerTemp, 'setup-gekko-4242');
@@ -42,7 +45,9 @@ test('latest installs the CLI and the runner APK and exports them', async (t) =>
   const dir = installDir(step);
   const cli = path.join(dir, 'bin', 'gekko');
   assert.equal(fs.readFileSync(cli, 'utf8'), '#!/bin/sh\necho gekko linux\n');
-  assert.ok(fs.statSync(cli).mode & 0o100, 'the binary is executable');
+  if (process.platform !== 'win32') {
+    assert.ok(fs.statSync(cli).mode & 0o100, 'the binary is executable');
+  }
   assert.equal(fs.readFileSync(path.join(dir, 'gekko-system-runner.apk'), 'utf8'), 'apk bytes');
   assert.equal(fs.existsSync(path.join(dir, 'download')), false, 'the staging directory is removed');
 
@@ -62,6 +67,41 @@ test('macOS arm64 gets the macOS binary', async (t) => {
   const { step } = await setup(t);
   await run({ env: step.env, write: step.write, ...mac });
   assert.equal(fs.readFileSync(path.join(installDir(step), 'bin', 'gekko'), 'utf8'), '#!/bin/sh\necho gekko macos\n');
+});
+
+test('Windows x64 gets gekko.exe, which is what Windows starts', async (t) => {
+  const { github, step } = await setup(t);
+  await run({ env: step.env, write: step.write, ...windows });
+
+  const dir = installDir(step);
+  const cli = path.join(dir, 'bin', 'gekko.exe');
+  assert.equal(fs.readFileSync(cli, 'utf8'), 'MZ gekko windows');
+  assert.equal(fs.existsSync(path.join(dir, 'bin', 'gekko')), false);
+  assert.equal(step.read('GITHUB_PATH'), `${path.join(dir, 'bin')}\n`);
+  assert.deepEqual(step.entries('GITHUB_OUTPUT'), { version: '0.1.0', path: cli });
+  assert.deepEqual(step.entries('GITHUB_ENV'), { GEKKO_RUNNER_APK: path.join(dir, 'gekko-system-runner.apk') });
+  assert.match(step.logs.join(''), /Verified gekko-windows-x64\.exe sha256:[0-9a-f]{64} \(release digest\)/);
+  assert.equal(github.requests.filter((request) => request.url.includes('/releases/assets/')).length, 2);
+});
+
+test('a hash pin for the Windows binary is checked like the others', async (t) => {
+  const { step } = await setup(t, { inputs: { 'cli-sha256': 'f'.repeat(64) } });
+  await assert.rejects(
+    run({ env: step.env, write: step.write, ...windows }),
+    new RegExp(`SHA-256 mismatch for gekko-windows-x64\\.exe: expected ${'f'.repeat(64)} \\(pinned input\\)`),
+  );
+  assertNothingExported(step);
+});
+
+test('a release from before the Windows build says so', async (t) => {
+  const files = defaultFiles();
+  delete files['gekko-windows-x64.exe'];
+  const { step } = await setup(t, { releases: [buildRelease({ files })] });
+  await assert.rejects(
+    run({ env: step.env, write: step.write, ...windows }),
+    /has no asset gekko-windows-x64\.exe;.*only since the first release after 1\.3\.0/,
+  );
+  assertNothingExported(step);
 });
 
 test('a pinned version is looked up by tag, with or without a leading v', async (t) => {
@@ -215,7 +255,7 @@ test('a release without the runner APK lists what it has', async (t) => {
 
 test('an unsupported platform or architecture fails before any request is made', async (t) => {
   for (const target of [
-    { platform: 'win32', arch: 'x64' },
+    { platform: 'win32', arch: 'arm64' },
     { platform: 'darwin', arch: 'x64' },
     { platform: 'linux', arch: 'arm64' },
   ]) {
@@ -229,9 +269,11 @@ test('an unsupported platform or architecture fails before any request is made',
 });
 
 test('ios needs a macOS runner', async (t) => {
-  const { github, step } = await setup(t, { inputs: { ios: 'true' } });
-  await assert.rejects(run({ env: step.env, write: step.write, ...linux }), /'ios' needs a macOS runner/);
-  assert.equal(github.requests.length, 0);
+  for (const target of [linux, windows]) {
+    const { github, step } = await setup(t, { inputs: { ios: 'true' } });
+    await assert.rejects(run({ env: step.env, write: step.write, ...target }), /'ios' needs a macOS runner/);
+    assert.equal(github.requests.length, 0);
+  }
 });
 
 test('ios false downloads no iOS assets', async (t) => {
@@ -241,7 +283,7 @@ test('ios false downloads no iOS assets', async (t) => {
   assert.deepEqual(Object.keys(step.entries('GITHUB_ENV')), ['GEKKO_RUNNER_APK']);
 });
 
-test('ios true unpacks the iOS runner and agent and exports their paths', async (t) => {
+test('ios true unpacks the iOS runner and agent and exports their paths', notOnWindows, async (t) => {
   const files = defaultFiles();
   const { github, step } = await setup(t, {
     releases: [buildRelease({ files })],
@@ -271,7 +313,7 @@ test('a wrong iOS runner hash stops the install', async (t) => {
   assertNothingExported(step);
 });
 
-test('an iOS zip with the wrong layout is reported', async (t) => {
+test('an iOS zip with the wrong layout is reported', notOnWindows, async (t) => {
   const files = defaultFiles();
   files['gekko-ios-agent.zip'] = require('./helpers').makeZip({ 'somewhere/else.txt': 'x' });
   const { step } = await setup(t, { releases: [buildRelease({ files })], inputs: { ios: 'true' } });
@@ -303,7 +345,8 @@ test('an earlier install in the same run is replaced, not mixed in', async (t) =
 
 test('the entry point installs, and post removes it again', async (t) => {
   const target = { platform: process.platform, arch: process.arch };
-  if (!(target.platform === 'linux' && target.arch === 'x64') && !(target.platform === 'darwin' && target.arch === 'arm64')) {
+  const supported = ['linux-x64', 'darwin-arm64', 'win32-x64'];
+  if (!supported.includes(`${target.platform}-${target.arch}`)) {
     t.skip(`no gekko CLI for ${target.platform}/${target.arch}`);
     return;
   }
@@ -317,7 +360,7 @@ test('the entry point installs, and post removes it again', async (t) => {
   assert.match(main.stdout, /is installed at/);
   const dir = step.entries('GITHUB_STATE').dir;
   assert.equal(path.basename(dir), 'setup-gekko-4242');
-  assert.ok(fs.existsSync(path.join(dir, 'bin', 'gekko')));
+  assert.ok(fs.existsSync(path.join(dir, 'bin', target.platform === 'win32' ? 'gekko.exe' : 'gekko')));
 
   const post = await promisify(execFile)(process.execPath, [path.join(root, 'src', 'post.js')], {
     env: { ...spawnEnv, STATE_dir: dir },

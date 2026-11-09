@@ -61,11 +61,11 @@ That catches a corrupted or truncated download, but not an asset that someone re
 ```yaml
 with:
   version: 1.3.0
-  cli-sha256: <sha256 of gekko-macos-arm64 or gekko-linux-x64>
+  cli-sha256: <sha256 of gekko-macos-arm64, gekko-linux-x64 or gekko-windows-x64.exe>
   system-runner-sha256: <sha256 of gekko-system-runner.apk>
 ```
 
-The hashes of a release are in its release notes and in its `SHA256SUMS` asset, or compute them from the files you trust: `shasum -a 256 gekko-macos-arm64`. The CLI hash differs per platform, so a workflow that runs on macOS and Linux needs one per binary (set `cli-sha256` per matrix entry). The accepted forms are the bare hex string or `sha256:<hex>`, upper or lower case.
+The hashes of a release are in its release notes and in its `SHA256SUMS` asset, or compute them from the files you trust: `shasum -a 256 gekko-macos-arm64` (on Windows `(Get-FileHash gekko-windows-x64.exe).Hash`). The CLI hash differs per platform, so a workflow that runs on more than one needs one per binary (set `cli-sha256` per matrix entry). The accepted forms are the bare hex string or `sha256:<hex>`, upper or lower case.
 
 ## Private repositories
 
@@ -86,14 +86,17 @@ This removes the files on the runner. Apps and port forwards that gekko put on a
 |---|---|
 | macOS arm64 | `gekko-macos-arm64` |
 | Linux x64 | `gekko-linux-x64` |
+| Windows x64 | `gekko-windows-x64.exe` (installed as `gekko.exe`; needs the first gekko release after 1.3.0) |
 
-Anything else fails with a clear message before any request is made. The action runs on `node24`.
+Anything else (Windows or Linux on ARM64, macOS on Intel) fails with a clear message before any request is made. `ios: true` needs a macOS runner. On Windows the iOS inputs do not apply and the web and Android tests run like everywhere else. The action runs on `node24`.
 
 ## Development
 
 ```sh
 node --test test/*.test.js
 ```
+
+CI runs the tests on Linux, macOS and Windows, and installs a real gekko release with the action on each of them.
 
 The tests start a local fake of the GitHub release API (`GITHUB_API_URL`), so they need neither network nor a token. There is nothing to install and nothing to build.
 
