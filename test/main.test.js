@@ -99,7 +99,7 @@ test('a release from before the Windows build says so', async (t) => {
   const { step } = await setup(t, { releases: [buildRelease({ files })] });
   await assert.rejects(
     run({ env: step.env, write: step.write, ...windows }),
-    /has no asset gekko-windows-x64\.exe;.*only since the first release after 1\.3\.0/,
+    /has no asset gekko-windows-x64\.exe;.*only since 1\.4\.0/,
   );
   assertNothingExported(step);
 });

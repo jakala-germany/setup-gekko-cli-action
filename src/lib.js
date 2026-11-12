@@ -131,7 +131,7 @@ function findAssets(release, names) {
   const missing = names.filter((name) => !available.includes(name));
   if (missing.length > 0) {
     const hint = missing.includes(WINDOWS_CLI_ASSET)
-      ? ' (gekko has a Windows build only since the first release after 1.3.0)'
+      ? ' (gekko has a Windows build only since 1.4.0)'
       : '';
     throw new Error(
       `Release ${release.tag_name} has no asset ${missing.join(', ')}; it has: ${available.join(', ') || 'none'}${hint}`,

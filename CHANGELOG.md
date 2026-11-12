@@ -2,15 +2,23 @@
 
 ## [Snapshot]
 
-[Snapshot]: https://github.com/jakala-germany/setup-gekko-cli-action/compare/1.3.0...HEAD
+[Snapshot]: https://github.com/jakala-germany/setup-gekko-cli-action/compare/1.4.0...HEAD
 
 **New**
 
-- Windows x64 runners: the action installs `gekko-windows-x64.exe` as `gekko.exe` (needs a gekko release that has it, the first one after 1.3.0) and exports the same variables as on the other runners; its tests and a smoke job run on Linux, macOS and Windows
+- Upcoming additions go here
 
 **Changed**
 
 - Upcoming changes go here
+
+## [1.4.0]
+
+[1.4.0]: https://github.com/jakala-germany/setup-gekko-cli-action/compare/1.3.0...1.4.0
+
+**New**
+
+- Windows x64 runners: the action installs `gekko-windows-x64.exe` as `gekko.exe` (needs gekko 1.4.0 or newer) and exports the same variables as on the other runners; its tests and a smoke job run on Linux, macOS and Windows
 
 ## [1.3.0]
 

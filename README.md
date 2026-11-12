@@ -9,9 +9,9 @@ It is a JavaScript action without dependencies and without a build step (`src/` 
 ```yaml
 steps:
   - name: 'Setup gekko'
-    uses: jakala-germany/setup-gekko-cli-action@1.3.0
+    uses: jakala-germany/setup-gekko-cli-action@1.4.0
     with:
-      version: 1.3.0
+      version: 1.4.0
 
   - name: 'Run tests'
     run: gekko run --tags smoke
@@ -60,7 +60,7 @@ That catches a corrupted or truncated download, but not an asset that someone re
 
 ```yaml
 with:
-  version: 1.3.0
+  version: 1.4.0
   cli-sha256: <sha256 of gekko-macos-arm64, gekko-linux-x64 or gekko-windows-x64.exe>
   system-runner-sha256: <sha256 of gekko-system-runner.apk>
 ```
@@ -86,7 +86,7 @@ This removes the files on the runner. Apps and port forwards that gekko put on a
 |---|---|
 | macOS arm64 | `gekko-macos-arm64` |
 | Linux x64 | `gekko-linux-x64` |
-| Windows x64 | `gekko-windows-x64.exe` (installed as `gekko.exe`; needs the first gekko release after 1.3.0) |
+| Windows x64 | `gekko-windows-x64.exe` (installed as `gekko.exe`; needs gekko 1.4.0 or newer) |
 
 Anything else (Windows or Linux on ARM64, macOS on Intel) fails with a clear message before any request is made. `ios: true` needs a macOS runner. On Windows the iOS inputs do not apply and the web and Android tests run like everywhere else. The action runs on `node24`.
 
