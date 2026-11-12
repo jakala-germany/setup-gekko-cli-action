@@ -45,9 +45,9 @@ jobs:
             version: '1.3.0'
           - os: macos-latest
             version: '1.3.0'
-          # Put the first gekko release with gekko-windows-x64.exe here; as long as there is none, this leg is skipped
+          # The first gekko release with gekko-windows-x64.exe
           - os: windows-latest
-            version: ''
+            version: '1.4.0'
     permissions:
       contents: read # read for checkout
     steps:
