@@ -9,7 +9,9 @@ const { pipeline } = require('node:stream/promises');
 const CLI_ASSETS = {
   'darwin-arm64': 'gekko-macos-arm64',
   'linux-x64': 'gekko-linux-x64',
+  'win32-x64': 'gekko-windows-x64.exe',
 };
+const WINDOWS_CLI_ASSET = CLI_ASSETS['win32-x64'];
 const SYSTEM_RUNNER_ASSET = 'gekko-system-runner.apk';
 const IOS_RUNNER_ASSET = 'gekko-ios-runner.zip';
 const IOS_AGENT_ASSET = 'gekko-ios-agent.zip';
@@ -20,7 +22,7 @@ const INSTALL_DIR_PREFIX = 'setup-gekko-';
 const API_TIMEOUT_MS = 60_000;
 const DOWNLOAD_TIMEOUT_MS = 300_000;
 
-/** The CLI binary of a release for this runner; gekko is only built for macOS arm64 and Linux x64. */
+/** The CLI binary of a release for this runner; gekko is only built for macOS arm64, Linux x64 and Windows x64. */
 function cliAssetName(platform, arch) {
   const asset = CLI_ASSETS[`${platform}-${arch}`];
   if (!asset) {
@@ -29,6 +31,11 @@ function cliAssetName(platform, arch) {
     );
   }
   return asset;
+}
+
+/** The name the binary gets on the runner: Windows only starts what ends in `.exe`. */
+function cliBinaryName(platform) {
+  return platform === 'win32' ? 'gekko.exe' : 'gekko';
 }
 
 /** `v0.1.0` and `0.1.0` both mean the release 0.1.0. */
@@ -123,8 +130,11 @@ function findAssets(release, names) {
   const available = (release.assets || []).map((asset) => asset.name);
   const missing = names.filter((name) => !available.includes(name));
   if (missing.length > 0) {
+    const hint = missing.includes(WINDOWS_CLI_ASSET)
+      ? ' (gekko has a Windows build only since the first release after 1.3.0)'
+      : '';
     throw new Error(
-      `Release ${release.tag_name} has no asset ${missing.join(', ')}; it has: ${available.join(', ') || 'none'}`,
+      `Release ${release.tag_name} has no asset ${missing.join(', ')}; it has: ${available.join(', ') || 'none'}${hint}`,
     );
   }
   return names.map((name) => release.assets.find((asset) => asset.name === name));
@@ -178,6 +188,7 @@ module.exports = {
   IOS_RUNNER_ASSET,
   SYSTEM_RUNNER_ASSET,
   cliAssetName,
+  cliBinaryName,
   digestOf,
   downloadAsset,
   extractZip,

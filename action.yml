@@ -24,7 +24,7 @@ inputs:
     required: false
     default: 'false'
   cli-sha256:
-    description: 'Optional hard pin: SHA-256 of the gekko binary (gekko-macos-arm64 or gekko-linux-x64); replaces the digest GitHub reports for the release asset, the step fails on a mismatch'
+    description: 'Optional hard pin: SHA-256 of the gekko binary (gekko-macos-arm64, gekko-linux-x64 or gekko-windows-x64.exe); replaces the digest GitHub reports for the release asset, the step fails on a mismatch'
     required: false
     default: ''
   system-runner-sha256:

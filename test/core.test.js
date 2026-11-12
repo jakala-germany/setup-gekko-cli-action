@@ -22,8 +22,11 @@ test('getBooleanInput accepts the YAML spellings and rejects anything else', () 
 });
 
 test('file commands append name=value and use a heredoc for multi-line values', () => {
-  assert.match(fileCommandEntry('A', 'one'), /^A=one\n$/);
-  assert.match(fileCommandEntry('B', 'x\ny'), /^B<<ghadelimiter_[0-9a-f-]+\nx\ny\nghadelimiter_[0-9a-f-]+\n$/);
+  assert.match(fileCommandEntry('A', 'one'), /^A=one\r?\n$/);
+  assert.match(
+    fileCommandEntry('B', 'x\ny'),
+    /^B<<ghadelimiter_[0-9a-f-]+\r?\nx\ny\r?\nghadelimiter_[0-9a-f-]+\r?\n$/,
+  );
 });
 
 test('output, env, path and state go to their files', (t) => {
@@ -59,7 +62,11 @@ test('error and warning use workflow commands with escaped data', () => {
   core.error('bad 100%\nnext');
   core.warning('careful');
   assert.equal(escapeCommandData('a%b\r\nc'), 'a%25b%0D%0Ac');
-  assert.deepEqual(logs, ['::error::bad 100%25%0Anext\n', '::warning::careful\n']);
+  // Windows ends the lines with CR LF (os.EOL); compare with LF
+  assert.deepEqual(
+    logs.map((line) => line.replace(/\r\n/g, '\n')),
+    ['::error::bad 100%25%0Anext\n', '::warning::careful\n'],
+  );
 });
 
 test('the files really are appended to, not replaced', (t) => {

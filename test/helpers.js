@@ -78,11 +78,12 @@ function sha256(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
-/** The files of a gekko release; the CLI is built per platform, so both names are present. */
+/** The files of a gekko release; the CLI is built per platform, so all names are present. */
 function defaultFiles() {
   return {
     'gekko-macos-arm64': Buffer.from('#!/bin/sh\necho gekko macos\n'),
     'gekko-linux-x64': Buffer.from('#!/bin/sh\necho gekko linux\n'),
+    'gekko-windows-x64.exe': Buffer.from('MZ gekko windows'),
     'gekko-system-runner.apk': Buffer.from('apk bytes'),
     'gekko-ios-runner.zip': makeZip({ 'gekko-ios-runner/GekkoRunner.xctestrun': '<plist/>' }),
     'gekko-ios-agent.zip': makeZip({ 'gekko-ios-agent/GekkoAgent.framework/GekkoAgent': 'agent' }),
@@ -197,12 +198,14 @@ function makeStepEnvironment(extra = {}) {
     logs,
     write: (text) => logs.push(text),
     env: { ...files, RUNNER_TEMP: runnerTemp, GITHUB_RUN_ID: '4242', ...extra },
-    read: (name) => fs.readFileSync(files[name], 'utf8'),
+    // Windows ends the lines of file commands with CR LF (os.EOL); the tests compare with LF
+    read: (name) => fs.readFileSync(files[name], 'utf8').replace(/\r\n/g, '\n'),
     /** `name=value` lines of a file command as an object. */
     entries: (name) =>
       Object.fromEntries(
         fs
           .readFileSync(files[name], 'utf8')
+          .replace(/\r\n/g, '\n')
           .split('\n')
           .filter((line) => line.includes('='))
           .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
