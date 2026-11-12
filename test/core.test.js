@@ -62,7 +62,11 @@ test('error and warning use workflow commands with escaped data', () => {
   core.error('bad 100%\nnext');
   core.warning('careful');
   assert.equal(escapeCommandData('a%b\r\nc'), 'a%25b%0D%0Ac');
-  assert.deepEqual(logs, ['::error::bad 100%25%0Anext\n', '::warning::careful\n']);
+  // Windows ends the lines with CR LF (os.EOL); compare with LF
+  assert.deepEqual(
+    logs.map((line) => line.replace(/\r\n/g, '\n')),
+    ['::error::bad 100%25%0Anext\n', '::warning::careful\n'],
+  );
 });
 
 test('the files really are appended to, not replaced', (t) => {
